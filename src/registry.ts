@@ -193,6 +193,8 @@ export interface RegistryDeps {
   sessions: SessionStore
   sessionPersistence: SessionPersistenceLike | undefined
   workspaceRegistry: WorkspaceRegistryLike | undefined
+    /** 惰性解析：mount 时 workspaceRegistry 服务可能尚未就绪 */
+  resolveWorkspaceRegistry?: () => WorkspaceRegistryLike | undefined
   agentPresets: AgentPresetsLike | undefined
   defaultModel: (() => ModelSelection | undefined) | undefined
   /** The only config fields the registry reads. */
@@ -1094,7 +1096,11 @@ export class ChatRegistry {
    * sessions cannot spawn accidental workspaces.
    */
   private async attachToWorkspace(sessionId: string, headerCwd: string | undefined): Promise<void> {
-    const registry = this.deps.workspaceRegistry
+    const registry = this.deps.resolveWorkspaceRegistry?.() ?? this.deps.workspaceRegistry
+    if (registry === undefined) {
+      this.deps.log('warn', 'workspace attach skipped: workspaceRegistry unavailable')
+      return
+    }
     if (registry === undefined) return
     try {
       if (headerCwd === undefined || headerCwd === '') {
