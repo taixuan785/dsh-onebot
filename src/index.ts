@@ -495,7 +495,13 @@ export function apply(ctx: Context, config: Config): void {
     agentPresets: ctx.agentPresets,
     commands: ctx.commands as BridgeDeps['commands'],
     sessionPersistence: ctx.sessionPersistence,
-    workspaceRegistry: ctx.workspaceRegistry as unknown as WorkspaceRegistryLike,
+    workspaceRegistry: ctx.workspaceRegistry     resolveWorkspaceRegistry: () => {
+      try {
+        return ctx.workspaceRegistry ?? ctx.get?.('workspaceRegistry')
+      } catch {
+        return undefined
+      }
+    }, as unknown as WorkspaceRegistryLike,
     agentDefaultModel: ctx.agentDefaultModel,
     defaultModel: () => {
       try {
